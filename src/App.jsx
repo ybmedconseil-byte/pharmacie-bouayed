@@ -1,10 +1,7 @@
 import { useState, useEffect } from "react";
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, onValue, set, push, remove, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { initializeApp } from "firebase/app";
+import { getDatabase, ref, onValue, set, push, remove, update } from "firebase/database";
 
-// ============================================================
-// 🔧 COLLER ICI VOS CLÉS FIREBASE (étape 3 du guide)
-// ============================================================
 const firebaseConfig = {
   apiKey: "AIzaSyBnDDEl94fCGpuL-eZuqjYfSs5afZLSbYA",
   authDomain: "pharmacie-app-bec58.firebaseapp.com",
@@ -14,30 +11,45 @@ const firebaseConfig = {
   messagingSenderId: "803414246603",
   appId: "1:803414246603:web:e6bd2e239c3ff95d2dc74e"
 };
-// ============================================================
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
+// ─── COMPTES PAR DÉFAUT ───
+const COMPTES = [
+  { nom: "Administrateur", pin: "1234", role: "admin" },
+  { nom: "Imène",   pin: "0000", role: "collaborateur" },
+  { nom: "Sanaa",   pin: "0000", role: "collaborateur" },
+  { nom: "Malak",   pin: "0000", role: "collaborateur" },
+  { nom: "Chaima",  pin: "0000", role: "collaborateur" },
+  { nom: "Guest",   pin: "0000", role: "collaborateur" },
+  { nom: "Yacine",  pin: "0000", role: "collaborateur" },
+];
+
+// Collaborateurs peuvent voir : Commandes, Consignes, Ruptures
+// Admin voit tout : + Réclamations, Paiements, Paramètres
+const MODULES_COLLAB = ["Commandes", "Consignes", "Ruptures"];
+const MODULES_ADMIN  = ["Réclamations", "Commandes", "Paiements", "Consignes", "Ruptures", "Paramètres"];
+
 // ─── ICONS ───
 const Icons = {
   Réclamations: <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>,
-  Commandes: <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>,
-  Paiements: <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>,
-  Consignes: <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>,
-  Ruptures: <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 00-2 2v6a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/><line x1="12" y1="12" x2="12" y2="12.01" strokeWidth="3"/></svg>,
-  Paramètres: <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>,
+  Commandes:    <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>,
+  Paiements:    <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>,
+  Consignes:    <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>,
+  Ruptures:     <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 00-2 2v6a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/><line x1="12" y1="12" x2="12" y2="12.01" strokeWidth="3"/></svg>,
+  Paramètres:   <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>,
 };
 
-const MODULES = ["Réclamations", "Commandes", "Paiements", "Consignes", "Ruptures"];
 const MODULE_DESC = {
   Réclamations: "Gérez les réclamations fournisseurs, clients et internes.",
-  Commandes: "Notez les commandes clients en attente de livraison.",
-  Paiements: "Enregistrez les paiements espèces aux fournisseurs.",
-  Consignes: "Laissez des messages et consignes à vos collègues.",
-  Ruptures: "Signalez les produits manquants ou en rupture de stock.",
-  Paramètres: "Gérez les collaborateurs, fournisseurs et nom de la pharmacie.",
+  Commandes:    "Notez les commandes clients en attente de livraison.",
+  Paiements:    "Enregistrez les paiements espèces aux fournisseurs.",
+  Consignes:    "Laissez des messages et consignes à vos collègues.",
+  Ruptures:     "Signalez les produits manquants ou en rupture de stock.",
+  Paramètres:   "Gérez les collaborateurs, fournisseurs et nom de la pharmacie.",
 };
+
 const STATUT_COLORS = {
   "En cours": "#f59e0b", "Résolu": "#10b981", "En attente": "#6366f1",
   "Livré": "#10b981", "Commandé": "#6366f1", "Annulé": "#ef4444",
@@ -45,9 +57,9 @@ const STATUT_COLORS = {
   "Rupture": "#ef4444", "Commandé fournisseur": "#6366f1", "Reçu": "#10b981",
 };
 
-const labelStyle = { display: "block", fontSize: 11, fontWeight: 700, color: "#5a7a90", marginBottom: 5, textTransform: "uppercase", letterSpacing: 0.5 };
-const inputStyle = { width: "100%", padding: "9px 12px", border: "1.5px solid #c2d9f0", borderRadius: 9, fontSize: 14, fontFamily: "inherit", background: "#fff", color: "#1a2e3b", outline: "none", boxSizing: "border-box" };
-const btnPrimary = { padding: "10px 22px", background: "#0f4c81", color: "#fff", border: "none", borderRadius: 9, cursor: "pointer", fontFamily: "inherit", fontWeight: 700, fontSize: 14 };
+const labelStyle   = { display: "block", fontSize: 11, fontWeight: 700, color: "#5a7a90", marginBottom: 5, textTransform: "uppercase", letterSpacing: 0.5 };
+const inputStyle   = { width: "100%", padding: "9px 12px", border: "1.5px solid #c2d9f0", borderRadius: 9, fontSize: 14, fontFamily: "inherit", background: "#fff", color: "#1a2e3b", outline: "none", boxSizing: "border-box" };
+const btnPrimary   = { padding: "10px 22px", background: "#0f4c81", color: "#fff", border: "none", borderRadius: 9, cursor: "pointer", fontFamily: "inherit", fontWeight: 700, fontSize: 14 };
 const btnSecondary = { padding: "10px 22px", background: "#e8f0f8", color: "#0f4c81", border: "none", borderRadius: 9, cursor: "pointer", fontFamily: "inherit", fontWeight: 700, fontSize: 14 };
 
 function formatDate(d) {
@@ -67,7 +79,6 @@ function Loader() {
   return <div style={{ textAlign: "center", padding: "40px 20px", color: "#8fa3b8", fontSize: 14 }}>Chargement…</div>;
 }
 
-// ─── HOOK FIREBASE ───
 function useFirebase(path, defaultVal = []) {
   const [data, setData] = useState(null);
   useEffect(() => {
@@ -76,8 +87,7 @@ function useFirebase(path, defaultVal = []) {
       const val = snap.val();
       if (val === null) { setData(defaultVal); return; }
       if (Array.isArray(defaultVal)) {
-        const arr = Object.entries(val).map(([id, v]) => ({ ...v, id }));
-        setData(arr);
+        setData(Object.entries(val).map(([id, v]) => ({ ...v, id })));
       } else {
         setData(val);
       }
@@ -87,16 +97,97 @@ function useFirebase(path, defaultVal = []) {
   return data;
 }
 
-function fbAdd(path, obj) { push(ref(db, path), { ...obj, date: Date.now() }); }
+function fbAdd(path, obj)        { push(ref(db, path), { ...obj, date: Date.now() }); }
 function fbUpdate(path, id, obj) { update(ref(db, `${path}/${id}`), obj); }
-function fbRemove(path, id) { remove(ref(db, `${path}/${id}`)); }
-function fbSet(path, val) { set(ref(db, path), val); }
+function fbRemove(path, id)      { remove(ref(db, `${path}/${id}`)); }
+function fbSet(path, val)        { set(ref(db, path), val); }
 
-// ─── LISTE ÉDITABLE ───
+// ═══════════════════════════════════════════
+// ÉCRAN DE CONNEXION
+// ═══════════════════════════════════════════
+function Login({ onLogin }) {
+  const [selectedNom, setSelectedNom] = useState("");
+  const [pin, setPin]                 = useState("");
+  const [erreur, setErreur]           = useState("");
+  const [showPin, setShowPin]         = useState(false);
+
+  const handlePin = (chiffre) => {
+    if (pin.length < 4) setPin(p => p + chiffre);
+  };
+  const handleDel = () => setPin(p => p.slice(0, -1));
+
+  const handleLogin = () => {
+    if (!selectedNom) { setErreur("Choisissez votre nom."); return; }
+    const compte = COMPTES.find(c => c.nom === selectedNom);
+    if (!compte) { setErreur("Compte introuvable."); return; }
+    if (compte.pin !== pin) { setErreur("Code PIN incorrect."); setPin(""); return; }
+    setErreur("");
+    onLogin({ nom: compte.nom, role: compte.role });
+  };
+
+  return (
+    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #0a3560 0%, #1a6bac 100%)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+      <div style={{ background: "#fff", borderRadius: 20, padding: 32, width: "100%", maxWidth: 360, boxShadow: "0 20px 60px #0a356040" }}>
+        {/* Logo */}
+        <div style={{ textAlign: "center", marginBottom: 28 }}>
+          <div style={{ width: 64, height: 64, background: "linear-gradient(135deg, #0a3560, #1a6bac)", borderRadius: 18, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 30, margin: "0 auto 12px" }}>⚕</div>
+          <div style={{ fontWeight: 800, fontSize: 20, color: "#0a3560" }}>Pharmacie Bouayed</div>
+          <div style={{ fontSize: 13, color: "#8fa3b8", marginTop: 4 }}>Espace collaborateurs</div>
+        </div>
+
+        {/* Choix du nom */}
+        <div style={{ marginBottom: 20 }}>
+          <label style={labelStyle}>Qui êtes-vous ?</label>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            {COMPTES.map(c => (
+              <button key={c.nom} onClick={() => { setSelectedNom(c.nom); setPin(""); setErreur(""); }} style={{ padding: "10px 8px", borderRadius: 10, border: `2px solid ${selectedNom === c.nom ? "#0f4c81" : "#e2ecf5"}`, background: selectedNom === c.nom ? "#e8f3ff" : "#f7fafd", color: selectedNom === c.nom ? "#0f4c81" : "#5a7a90", fontWeight: selectedNom === c.nom ? 700 : 500, fontSize: 13, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                {c.role === "admin" ? "👑" : "👤"} {c.nom}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* PIN */}
+        {selectedNom && (
+          <div style={{ marginBottom: 20 }}>
+            <label style={labelStyle}>Code PIN</label>
+            {/* Affichage du PIN */}
+            <div style={{ display: "flex", justifyContent: "center", gap: 12, marginBottom: 16 }}>
+              {[0,1,2,3].map(i => (
+                <div key={i} style={{ width: 48, height: 48, borderRadius: 12, border: `2px solid ${pin.length > i ? "#0f4c81" : "#c2d9f0"}`, background: pin.length > i ? "#0f4c81" : "#f7fafd", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  {pin.length > i ? <div style={{ width: 12, height: 12, borderRadius: "50%", background: "#fff" }} /> : null}
+                </div>
+              ))}
+            </div>
+            {/* Clavier numérique */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+              {[1,2,3,4,5,6,7,8,9].map(n => (
+                <button key={n} onClick={() => handlePin(String(n))} style={{ padding: "14px", borderRadius: 12, border: "1.5px solid #e2ecf5", background: "#f7fafd", fontSize: 20, fontWeight: 700, cursor: "pointer", color: "#0a3560", fontFamily: "inherit" }}>{n}</button>
+              ))}
+              <div />
+              <button onClick={() => handlePin("0")} style={{ padding: "14px", borderRadius: 12, border: "1.5px solid #e2ecf5", background: "#f7fafd", fontSize: 20, fontWeight: 700, cursor: "pointer", color: "#0a3560", fontFamily: "inherit" }}>0</button>
+              <button onClick={handleDel} style={{ padding: "14px", borderRadius: 12, border: "1.5px solid #e2ecf5", background: "#f7fafd", fontSize: 20, cursor: "pointer", color: "#ef4444", fontFamily: "inherit" }}>⌫</button>
+            </div>
+          </div>
+        )}
+
+        {erreur && <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "8px 12px", fontSize: 13, color: "#ef4444", marginBottom: 12, textAlign: "center" }}>{erreur}</div>}
+
+        <button onClick={handleLogin} disabled={pin.length < 4 || !selectedNom} style={{ ...btnPrimary, width: "100%", opacity: (pin.length < 4 || !selectedNom) ? 0.5 : 1, fontSize: 15, padding: "13px" }}>
+          Connexion
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════
+// LISTE ÉDITABLE (Paramètres)
+// ═══════════════════════════════════════════
 function EditableList({ title, icon, items, fbPath, placeholder }) {
-  const [input, setInput] = useState("");
+  const [input, setInput]       = useState("");
   const [editingId, setEditingId] = useState(null);
-  const [editVal, setEditVal] = useState("");
+  const [editVal, setEditVal]   = useState("");
   if (!items) return <Loader />;
   return (
     <div style={{ background: "#fff", border: "1.5px solid #e2ecf5", borderRadius: 14, padding: 18, marginBottom: 16 }}>
@@ -133,13 +224,14 @@ function EditableList({ title, icon, items, fbPath, placeholder }) {
   );
 }
 
-// ─── PARAMÈTRES ───
+// ═══════════════════════════════════════════
+// PARAMÈTRES (admin seulement)
+// ═══════════════════════════════════════════
 function Parametres({ pharmacieName }) {
   const collaborateurs = useFirebase("collaborateurs", []);
-  const fournisseurs = useFirebase("fournisseurs", []);
+  const fournisseurs   = useFirebase("fournisseurs", []);
   const [nameInput, setNameInput] = useState(pharmacieName || "Pharmacie Bouayed");
-  const [saved, setSaved] = useState(false);
-
+  const [saved, setSaved]         = useState(false);
   return (
     <div>
       <div style={{ background: "#fff", border: "1.5px solid #e2ecf5", borderRadius: 14, padding: 18, marginBottom: 16 }}>
@@ -161,13 +253,15 @@ function Parametres({ pharmacieName }) {
   );
 }
 
-// ─── RÉCLAMATIONS ───
-function Reclamations() {
-  const items = useFirebase("reclamations", []);
+// ═══════════════════════════════════════════
+// RÉCLAMATIONS
+// ═══════════════════════════════════════════
+function Reclamations({ user }) {
+  const items  = useFirebase("reclamations", []);
   const collabs = useFirebase("collaborateurs", []);
-  const [form, setForm] = useState({ type: "Fournisseur", objet: "", description: "", auteur: "" });
+  const [form, setForm]       = useState({ type: "Fournisseur", objet: "", description: "", auteur: user.nom });
   const [showForm, setShowForm] = useState(false);
-  const [filter, setFilter] = useState("Tous");
+  const [filter, setFilter]   = useState("Tous");
   if (!items || !collabs) return <Loader />;
   const collabNoms = collabs.map(c => c.nom);
   const filtered = filter === "Tous" ? items : items.filter(i => i.statut === filter);
@@ -177,8 +271,8 @@ function Reclamations() {
   };
   const add = () => {
     if (!form.objet.trim()) return;
-    fbAdd("reclamations", { ...form, statut: "En cours", auteur: form.auteur || collabNoms[0] || "" });
-    setForm({ type: "Fournisseur", objet: "", description: "", auteur: form.auteur });
+    fbAdd("reclamations", { ...form, statut: "En cours" });
+    setForm({ type: "Fournisseur", objet: "", description: "", auteur: user.nom });
     setShowForm(false);
   };
   return (
@@ -199,7 +293,6 @@ function Reclamations() {
             </div>
             <div><label style={labelStyle}>Auteur</label>
               <select value={form.auteur} onChange={e => setForm({ ...form, auteur: e.target.value })} style={inputStyle}>
-                <option value="">-- Choisir --</option>
                 {collabNoms.map(c => <option key={c}>{c}</option>)}
               </select>
             </div>
@@ -231,13 +324,15 @@ function Reclamations() {
   );
 }
 
-// ─── COMMANDES ───
-function Commandes() {
-  const items = useFirebase("commandes", []);
+// ═══════════════════════════════════════════
+// COMMANDES
+// ═══════════════════════════════════════════
+function Commandes({ user }) {
+  const items   = useFirebase("commandes", []);
   const collabs = useFirebase("collaborateurs", []);
-  const [form, setForm] = useState({ client: "", tel: "", produit: "", note: "", auteur: "", ordonnance: null });
+  const [form, setForm]         = useState({ client: "", tel: "", produit: "", note: "", auteur: user.nom, ordonnance: null });
   const [showForm, setShowForm] = useState(false);
-  const [zoomImg, setZoomImg] = useState(null);
+  const [zoomImg, setZoomImg]   = useState(null);
   if (!items || !collabs) return <Loader />;
   const collabNoms = collabs.map(c => c.nom);
   const handlePhoto = (e) => {
@@ -249,7 +344,7 @@ function Commandes() {
   const add = () => {
     if (!form.client.trim() || !form.produit.trim()) return;
     fbAdd("commandes", { ...form, statut: "En attente" });
-    setForm({ client: "", tel: "", produit: "", note: "", auteur: form.auteur, ordonnance: null });
+    setForm({ client: "", tel: "", produit: "", note: "", auteur: user.nom, ordonnance: null });
     setShowForm(false);
   };
   const cycleStatut = (item) => {
@@ -276,7 +371,6 @@ function Commandes() {
             <div><label style={labelStyle}>Note</label><input value={form.note} onChange={e => setForm({ ...form, note: e.target.value })} placeholder="Urgence, rappeler…" style={inputStyle} /></div>
             <div><label style={labelStyle}>Saisi par</label>
               <select value={form.auteur} onChange={e => setForm({ ...form, auteur: e.target.value })} style={inputStyle}>
-                <option value="">-- Choisir --</option>
                 {collabNoms.map(c => <option key={c}>{c}</option>)}
               </select>
             </div>
@@ -326,25 +420,24 @@ function Commandes() {
   );
 }
 
-// ─── PAIEMENTS ───
-function Paiements() {
-  const items = useFirebase("paiements", []);
-  const collabs = useFirebase("collaborateurs", []);
+// ═══════════════════════════════════════════
+// PAIEMENTS
+// ═══════════════════════════════════════════
+function Paiements({ user }) {
+  const items        = useFirebase("paiements", []);
+  const collabs      = useFirebase("collaborateurs", []);
   const fournisseurs = useFirebase("fournisseurs", []);
-  const [form, setForm] = useState({ fournisseur: "", montant: "", reference: "", remis_par: "", note: "" });
+  const [form, setForm]         = useState({ fournisseur: "", montant: "", reference: "", remis_par: user.nom, note: "" });
   const [showForm, setShowForm] = useState(false);
   if (!items || !collabs || !fournisseurs) return <Loader />;
-  const collabNoms = collabs.map(c => c.nom);
+  const collabNoms      = collabs.map(c => c.nom);
   const fournisseurNoms = fournisseurs.map(f => f.nom);
   const total = items.filter(i => i.statut === "Payé").reduce((s, i) => s + parseFloat(i.montant || 0), 0);
   const add = () => {
     if (!form.fournisseur.trim() || !form.montant) return;
     fbAdd("paiements", { ...form, montant: parseFloat(form.montant), statut: "À vérifier" });
-    setForm({ fournisseur: form.fournisseur, montant: "", reference: "", remis_par: form.remis_par, note: "" });
+    setForm({ fournisseur: form.fournisseur, montant: "", reference: "", remis_par: user.nom, note: "" });
     setShowForm(false);
-  };
-  const cycleStatut = (item) => {
-    fbUpdate("paiements", item.id, { statut: item.statut === "À vérifier" ? "Payé" : "À vérifier" });
   };
   return (
     <div>
@@ -370,7 +463,7 @@ function Paiements() {
             <div><label style={labelStyle}>Réf. Facture</label><input value={form.reference} onChange={e => setForm({ ...form, reference: e.target.value })} placeholder="FAC-2024-XXXX" style={inputStyle} /></div>
             <div><label style={labelStyle}>Remis par</label>
               <select value={form.remis_par} onChange={e => setForm({ ...form, remis_par: e.target.value })} style={inputStyle}>
-                <option value="">-- Choisir --</option>{collabNoms.map(c => <option key={c}>{c}</option>)}
+                {collabNoms.map(c => <option key={c}>{c}</option>)}
               </select>
             </div>
           </div>
@@ -388,10 +481,10 @@ function Paiements() {
                   {item.reference && <span style={{ fontSize: 11, color: "#8fa3b8", background: "#f0f4f8", padding: "2px 7px", borderRadius: 6 }}>{item.reference}</span>}
                 </div>
                 <div style={{ fontWeight: 800, fontSize: 17, color: "#1a2e3b" }}>{parseFloat(item.montant).toLocaleString("fr-FR", { style: "currency", currency: "EUR" })}</div>
-                <div style={{ fontSize: 11, color: "#b0c4d8", marginTop: 3 }}>💵 Espèces · {item.remis_par} · {formatDate(item.date)}</div>
+                <div style={{ fontSize: 11, color: "#b0c4d8", marginTop: 3 }}>💵 {item.remis_par} · {formatDate(item.date)}</div>
                 {item.note && <div style={{ color: "#5a7a90", fontSize: 12, marginTop: 3 }}>{item.note}</div>}
               </div>
-              <StatutBadge statut={item.statut} onClick={() => cycleStatut(item)} />
+              <StatutBadge statut={item.statut} onClick={() => fbUpdate("paiements", item.id, { statut: item.statut === "À vérifier" ? "Payé" : "À vérifier" })} />
             </div>
           </div>
         ))}
@@ -401,22 +494,24 @@ function Paiements() {
   );
 }
 
-// ─── CONSIGNES ───
-function Consignes() {
-  const items = useFirebase("consignes", []);
+// ═══════════════════════════════════════════
+// CONSIGNES
+// ═══════════════════════════════════════════
+function Consignes({ user }) {
+  const items   = useFirebase("consignes", []);
   const collabs = useFirebase("collaborateurs", []);
-  const [form, setForm] = useState({ destinataire: "Tous", priorite: "normale", texte: "", auteur: "" });
+  const [form, setForm]         = useState({ destinataire: "Tous", priorite: "normale", texte: "", auteur: user.nom });
   const [showForm, setShowForm] = useState(false);
   const [filterDest, setFilterDest] = useState("Tous");
   if (!items || !collabs) return <Loader />;
-  const collabNoms = collabs.map(c => c.nom);
+  const collabNoms  = collabs.map(c => c.nom);
   const destOptions = ["Tous", ...collabNoms];
-  const filtered = filterDest === "Tous" ? items : items.filter(i => i.destinataire === filterDest || i.destinataire === "Tous");
-  const nonLus = items.filter(i => !i.lu).length;
+  const filtered    = filterDest === "Tous" ? items : items.filter(i => i.destinataire === filterDest || i.destinataire === "Tous");
+  const nonLus      = items.filter(i => !i.lu).length;
   const add = () => {
     if (!form.texte.trim()) return;
     fbAdd("consignes", { ...form, lu: false });
-    setForm({ destinataire: "Tous", priorite: "normale", texte: "", auteur: form.auteur });
+    setForm({ destinataire: "Tous", priorite: "normale", texte: "", auteur: user.nom });
     setShowForm(false);
   };
   return (
@@ -433,7 +528,7 @@ function Consignes() {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 10 }}>
             <div><label style={labelStyle}>De</label>
               <select value={form.auteur} onChange={e => setForm({ ...form, auteur: e.target.value })} style={inputStyle}>
-                <option value="">-- Choisir --</option>{collabNoms.map(c => <option key={c}>{c}</option>)}
+                {collabNoms.map(c => <option key={c}>{c}</option>)}
               </select>
             </div>
             <div><label style={labelStyle}>Pour</label>
@@ -476,23 +571,24 @@ function Consignes() {
   );
 }
 
-// ─── RUPTURES ───
-function Ruptures() {
-  const items = useFirebase("ruptures", []);
-  const collabs = useFirebase("collaborateurs", []);
+// ═══════════════════════════════════════════
+// RUPTURES
+// ═══════════════════════════════════════════
+function Ruptures({ user }) {
+  const items        = useFirebase("ruptures", []);
+  const collabs      = useFirebase("collaborateurs", []);
   const fournisseurs = useFirebase("fournisseurs", []);
-  const [form, setForm] = useState({ produit: "", reference: "", signale_par: "", fournisseur: "", note: "", urgence: false });
+  const [form, setForm]         = useState({ produit: "", reference: "", signale_par: user.nom, fournisseur: "", note: "", urgence: false });
   const [showForm, setShowForm] = useState(false);
-  const [filter, setFilter] = useState("Tous");
+  const [filter, setFilter]     = useState("Tous");
   if (!items || !collabs || !fournisseurs) return <Loader />;
-  const collabNoms = collabs.map(c => c.nom);
   const fournisseurNoms = fournisseurs.map(f => f.nom);
   const filtered = filter === "Tous" ? items : filter === "Actifs" ? items.filter(i => i.statut !== "Reçu") : items.filter(i => i.statut === filter);
-  const actifs = items.filter(i => i.statut !== "Reçu").length;
+  const actifs   = items.filter(i => i.statut !== "Reçu").length;
   const add = () => {
     if (!form.produit.trim()) return;
     fbAdd("ruptures", { ...form, statut: "Rupture" });
-    setForm({ produit: "", reference: "", signale_par: form.signale_par, fournisseur: form.fournisseur, note: "", urgence: false });
+    setForm({ produit: "", reference: "", signale_par: user.nom, fournisseur: form.fournisseur, note: "", urgence: false });
     setShowForm(false);
   };
   const cycleStatut = (item) => {
@@ -519,18 +615,11 @@ function Ruptures() {
                 : <input value={form.fournisseur} onChange={e => setForm({ ...form, fournisseur: e.target.value })} placeholder="Cerp, OCP…" style={inputStyle} />}
             </div>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
-            <div><label style={labelStyle}>Signalé par</label>
-              <select value={form.signale_par} onChange={e => setForm({ ...form, signale_par: e.target.value })} style={inputStyle}>
-                <option value="">-- Choisir --</option>{collabNoms.map(c => <option key={c}>{c}</option>)}
-              </select>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
-              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 14, color: "#1a2e3b", fontWeight: 600 }}>
-                <input type="checkbox" checked={form.urgence} onChange={e => setForm({ ...form, urgence: e.target.checked })} style={{ width: 16, height: 16 }} />
-                🔴 Urgent
-              </label>
-            </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+            <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 14, color: "#1a2e3b", fontWeight: 600 }}>
+              <input type="checkbox" checked={form.urgence} onChange={e => setForm({ ...form, urgence: e.target.checked })} style={{ width: 16, height: 16 }} />
+              🔴 Urgent
+            </label>
           </div>
           <div style={{ marginBottom: 14 }}><label style={labelStyle}>Note</label><input value={form.note} onChange={e => setForm({ ...form, note: e.target.value })} placeholder="Délai estimé, rupture nationale…" style={inputStyle} /></div>
           <div style={{ display: "flex", gap: 8 }}><button onClick={add} style={btnPrimary}>Enregistrer</button><button onClick={() => setShowForm(false)} style={btnSecondary}>Annuler</button></div>
@@ -538,7 +627,7 @@ function Ruptures() {
       )}
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {filtered.sort((a,b) => b.date - a.date).map(item => (
-          <div key={item.id} style={{ background: item.statut === "Reçu" ? "#f0fdf4" : item.urgence ? "#fff7ed" : "#fff", border: `1.5px solid ${item.urgence && item.statut !== "Reçu" ? "#fed7aa" : item.statut === "Reçu" ? "#bbf7d0" : "#e2ecf5"}`, borderLeft: `4px solid ${item.statut === "Reçu" ? "#10b981" : item.urgence ? "#ef4444" : "#f59e0b"}`, borderRadius: 14, padding: 16 }}>
+          <div key={item.id} style={{ background: item.statut === "Reçu" ? "#f0fdf4" : item.urgence ? "#fff7ed" : "#fff", borderLeft: `4px solid ${item.statut === "Reçu" ? "#10b981" : item.urgence ? "#ef4444" : "#f59e0b"}`, border: `1.5px solid ${item.urgence && item.statut !== "Reçu" ? "#fed7aa" : item.statut === "Reçu" ? "#bbf7d0" : "#e2ecf5"}`, borderRadius: 14, padding: 16 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <div style={{ flex: 1, marginRight: 10 }}>
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 4 }}>
@@ -565,20 +654,27 @@ function Ruptures() {
   );
 }
 
-// ─── APP ───
+// ═══════════════════════════════════════════
+// APP PRINCIPALE
+// ═══════════════════════════════════════════
 export default function App() {
-  const [active, setActive] = useState("Réclamations");
+  const [user, setUser]           = useState(null);
+  const [active, setActive]       = useState("Commandes");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const pharmacieName = useFirebase("config/pharmacieName", "Pharmacie Bouayed");
-  const consignes = useFirebase("consignes", []);
-  const ruptures = useFirebase("ruptures", []);
-  const nonLusCount = consignes ? consignes.filter(i => !i.lu).length : 0;
-  const rupturesActives = ruptures ? ruptures.filter(i => i.statut !== "Reçu").length : 0;
+  const consignes     = useFirebase("consignes", []);
+  const ruptures      = useFirebase("ruptures", []);
 
-  const ALL_MODULES = [...MODULES, "Paramètres"];
+  const nonLusCount     = consignes ? consignes.filter(i => !i.lu).length : 0;
+  const rupturesActives = ruptures  ? ruptures.filter(i => i.statut !== "Reçu").length : 0;
+
+  if (!user) return <Login onLogin={(u) => { setUser(u); setActive(u.role === "admin" ? "Réclamations" : "Commandes"); }} />;
+
+  const MODULES = user.role === "admin" ? MODULES_ADMIN : MODULES_COLLAB;
 
   return (
     <div style={{ minHeight: "100vh", background: "#f0f5fb", fontFamily: "'DM Sans', 'Segoe UI', sans-serif", display: "flex", flexDirection: "column" }}>
+      {/* HEADER */}
       <div style={{ background: "linear-gradient(135deg, #0a3560 0%, #0f4c81 100%)", padding: "0 16px", display: "flex", alignItems: "center", height: 56, boxShadow: "0 2px 12px #0a356040", flexShrink: 0, zIndex: 10 }}>
         <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "#fff", marginRight: 12, padding: 6, borderRadius: 8, display: "flex", alignItems: "center" }}>
           <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
@@ -587,17 +683,21 @@ export default function App() {
           <div style={{ width: 32, height: 32, background: "#ffffff20", borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17 }}>⚕</div>
           <div>
             <div style={{ color: "#fff", fontWeight: 800, fontSize: 15, lineHeight: 1 }}>{pharmacieName || "Pharmacie Bouayed"}</div>
-            <div style={{ color: "#7fb3d9", fontSize: 10 }}>Espace collaborateurs</div>
+            <div style={{ color: "#7fb3d9", fontSize: 10 }}>{user.role === "admin" ? "👑 Admin" : "👤 " + user.nom}</div>
           </div>
         </div>
-        <div style={{ color: "#7fb3d9", fontSize: 11 }}>{new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}</div>
+        <button onClick={() => setUser(null)} style={{ background: "#ffffff20", border: "none", cursor: "pointer", color: "#fff", padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600 }}>
+          Déconnexion
+        </button>
       </div>
 
+      {/* BODY */}
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+        {/* SIDEBAR */}
         <div style={{ width: sidebarOpen ? 220 : 0, minWidth: sidebarOpen ? 220 : 0, background: "#fff", borderRight: "1.5px solid #e2ecf5", display: "flex", flexDirection: "column", transition: "width .2s, min-width .2s", overflow: "hidden", flexShrink: 0 }}>
           <nav style={{ padding: "12px 10px", flex: 1 }}>
             <div style={{ fontSize: 10, fontWeight: 700, color: "#b0c4d8", textTransform: "uppercase", letterSpacing: 1, padding: "4px 10px 8px" }}>Navigation</div>
-            {ALL_MODULES.map(mod => {
+            {MODULES.map(mod => {
               const badge = mod === "Consignes" ? nonLusCount : mod === "Ruptures" ? rupturesActives : 0;
               return (
                 <button key={mod} onClick={() => setActive(mod)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "11px 12px", borderRadius: 10, border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: active === mod ? 700 : 500, background: active === mod ? "#e8f3ff" : "transparent", color: active === mod ? "#0f4c81" : "#5a7a90", textAlign: "left", marginBottom: 2, position: "relative" }}>
@@ -609,21 +709,22 @@ export default function App() {
               );
             })}
           </nav>
-          <div style={{ padding: "12px 16px", borderTop: "1px solid #e8f0f8", fontSize: 11, color: "#b0c4d8" }}>v2.0 · Firebase 🔥</div>
+          <div style={{ padding: "12px 16px", borderTop: "1px solid #e8f0f8", fontSize: 11, color: "#b0c4d8" }}>v2.1 · 🔒 Sécurisé</div>
         </div>
 
+        {/* CONTENU */}
         <div style={{ flex: 1, overflow: "auto", padding: "20px 16px" }}>
           <div style={{ maxWidth: 680, margin: "0 auto" }}>
             <div style={{ marginBottom: 20 }}>
               <h1 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: "#0a3560" }}>{active}</h1>
               <p style={{ margin: "3px 0 0", color: "#8fa3b8", fontSize: 13 }}>{MODULE_DESC[active]}</p>
             </div>
-            {active === "Réclamations" && <Reclamations />}
-            {active === "Commandes" && <Commandes />}
-            {active === "Paiements" && <Paiements />}
-            {active === "Consignes" && <Consignes />}
-            {active === "Ruptures" && <Ruptures />}
-            {active === "Paramètres" && <Parametres pharmacieName={pharmacieName} />}
+            {active === "Réclamations" && <Reclamations user={user} />}
+            {active === "Commandes"    && <Commandes    user={user} />}
+            {active === "Paiements"    && <Paiements    user={user} />}
+            {active === "Consignes"    && <Consignes    user={user} />}
+            {active === "Ruptures"     && <Ruptures     user={user} />}
+            {active === "Paramètres"   && <Parametres   pharmacieName={pharmacieName} />}
           </div>
         </div>
       </div>
