@@ -28,7 +28,8 @@ const COMPTES = [
 
 // Collaborateurs peuvent voir : Commandes, Consignes, Ruptures
 // Admin voit tout : + Réclamations, Paiements, Paramètres
-const MODULES_COLLAB = ["Commandes", "Consignes", "Ruptures"];
+const MODULES_COLLAB       = ["Réclamations", "Commandes", "Consignes", "Ruptures"];
+const MODULES_COLLAB_SANAA = ["Réclamations", "Commandes", "Paiements", "Consignes", "Ruptures"];
 const MODULES_ADMIN  = ["Réclamations", "Commandes", "Paiements", "Consignes", "Ruptures", "Paramètres"];
 
 // ─── ICONS ───
@@ -560,7 +561,7 @@ function Consignes({ user }) {
               </div>
               <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
                 <button onClick={() => fbUpdate("consignes", item.id, { lu: !item.lu })} style={{ padding: "5px 10px", borderRadius: 8, border: "1.5px solid #c2d9f0", cursor: "pointer", background: "#fff", fontSize: 12, color: "#0f4c81", fontWeight: 600 }}>{item.lu ? "✓" : "Lu"}</button>
-                <button onClick={() => fbRemove("consignes", item.id)} style={{ padding: "5px 9px", borderRadius: 8, border: "1.5px solid #fecaca", cursor: "pointer", background: "#fff", fontSize: 12, color: "#ef4444" }}>✕</button>
+                {user.role === "admin" && <button onClick={() => fbRemove("consignes", item.id)} style={{ padding: "5px 9px", borderRadius: 8, border: "1.5px solid #fecaca", cursor: "pointer", background: "#fff", fontSize: 12, color: "#ef4444" }}>✕</button>}
               </div>
             </div>
           </div>
@@ -643,7 +644,7 @@ function Ruptures({ user }) {
               </div>
               <div style={{ display: "flex", gap: 6, flexDirection: "column", alignItems: "flex-end" }}>
                 <StatutBadge statut={item.statut} onClick={() => cycleStatut(item)} />
-                <button onClick={() => fbRemove("ruptures", item.id)} style={{ padding: "3px 8px", borderRadius: 6, border: "1.5px solid #fecaca", cursor: "pointer", background: "transparent", fontSize: 11, color: "#ef4444" }}>Supprimer</button>
+                {user.role === "admin" && <button onClick={() => fbRemove("ruptures", item.id)} style={{ padding: "3px 8px", borderRadius: 6, border: "1.5px solid #fecaca", cursor: "pointer", background: "transparent", fontSize: 11, color: "#ef4444" }}>Supprimer</button>}
               </div>
             </div>
           </div>
@@ -668,9 +669,9 @@ export default function App() {
   const nonLusCount     = consignes ? consignes.filter(i => !i.lu).length : 0;
   const rupturesActives = ruptures  ? ruptures.filter(i => i.statut !== "Reçu").length : 0;
 
-  if (!user) return <Login onLogin={(u) => { setUser(u); setActive(u.role === "admin" ? "Réclamations" : "Commandes"); }} />;
+  if (!user) return <Login onLogin={(u) => { setUser(u); setActive("Réclamations"); }} />;
 
-  const MODULES = user.role === "admin" ? MODULES_ADMIN : MODULES_COLLAB;
+  const MODULES = user.role === "admin" ? MODULES_ADMIN : user.nom === "Sanaa" ? MODULES_COLLAB_SANAA : MODULES_COLLAB;
 
   return (
     <div style={{ minHeight: "100vh", background: "#f0f5fb", fontFamily: "'DM Sans', 'Segoe UI', sans-serif", display: "flex", flexDirection: "column" }}>
