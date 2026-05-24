@@ -18,19 +18,19 @@ const db = getDatabase(app);
 // ─── COMPTES PAR DÉFAUT ───
 const COMPTES = [
   { nom: "Administrateur", pin: "1234", role: "admin" },
-  { nom: "Imène",   pin: "0000", role: "collaborateur" },
-  { nom: "Sanaa",   pin: "0000", role: "collaborateur" },
-  { nom: "Malak",   pin: "0000", role: "collaborateur" },
-  { nom: "Chaima",  pin: "0000", role: "collaborateur" },
-  { nom: "Guest",   pin: "0000", role: "collaborateur" },
-  { nom: "Yacine",  pin: "0000", role: "collaborateur" },
+  { nom: "Imène",   pin: "0405", role: "collaborateur" },
+  { nom: "Sanaa",   pin: "0405", role: "collaborateur" },
+  { nom: "Malak",   pin: "0405", role: "collaborateur" },
+  { nom: "Chaima",  pin: "0405", role: "collaborateur" },
+  { nom: "Guest",   pin: "0405", role: "collaborateur" },
+  { nom: "Yacine",  pin: "0405", role: "collaborateur" },
 ];
 
 // Collaborateurs peuvent voir : Commandes, Consignes, Ruptures
 // Admin voit tout : + Réclamations, Paiements, Paramètres
-const MODULES_COLLAB       = ["Réclamations", "Commandes", "Consignes", "Ruptures"];
-const MODULES_COLLAB_SANAA = ["Réclamations", "Commandes", "Paiements", "Consignes", "Ruptures"];
-const MODULES_ADMIN  = ["Réclamations", "Commandes", "Paiements", "Consignes", "Ruptures", "Paramètres"];
+const MODULES_COLLAB       = ["Réclamations", "Commandes", "Consignes", "Ruptures", "États Mensuels"];
+const MODULES_COLLAB_SANAA = ["Réclamations", "Commandes", "Paiements", "Consignes", "Ruptures", "États Mensuels"];
+const MODULES_ADMIN  = ["Réclamations", "Commandes", "Paiements", "Consignes", "Ruptures", "États Mensuels", "Paramètres"];
 
 // ─── ICONS ───
 const Icons = {
@@ -39,6 +39,7 @@ const Icons = {
   Paiements:    <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>,
   Consignes:    <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>,
   Ruptures:     <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 00-2 2v6a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/><line x1="12" y1="12" x2="12" y2="12.01" strokeWidth="3"/></svg>,
+  "États Mensuels": <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/></svg>,
   Paramètres:   <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>,
 };
 
@@ -48,6 +49,7 @@ const MODULE_DESC = {
   Paiements:    "Enregistrez les paiements espèces aux fournisseurs.",
   Consignes:    "Laissez des messages et consignes à vos collègues.",
   Ruptures:     "Signalez les produits manquants ou en rupture de stock.",
+  "États Mensuels": "Vérifiez et suivez les achats mensuels par fournisseur.",
   Paramètres:   "Gérez les collaborateurs, fournisseurs et nom de la pharmacie.",
 };
 
@@ -56,6 +58,7 @@ const STATUT_COLORS = {
   "Livré": "#10b981", "Commandé": "#6366f1", "Annulé": "#ef4444",
   "Payé": "#10b981", "À vérifier": "#f59e0b",
   "Rupture": "#ef4444", "Commandé fournisseur": "#6366f1", "Reçu": "#10b981",
+  "Vérifié": "#6366f1", "Validé": "#10b981",
 };
 
 const labelStyle   = { display: "block", fontSize: 11, fontWeight: 700, color: "#5a7a90", marginBottom: 5, textTransform: "uppercase", letterSpacing: 0.5 };
@@ -445,7 +448,7 @@ function Paiements({ user }) {
       <div style={{ background: "linear-gradient(135deg, #0f4c81, #1a6bac)", borderRadius: 14, padding: "16px 20px", marginBottom: 16, color: "#fff", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
           <div style={{ fontSize: 12, opacity: 0.75, marginBottom: 3 }}>Total espèces confirmées</div>
-          <div style={{ fontSize: 26, fontWeight: 800 }}>{total.toLocaleString("fr-FR", { style: "currency", currency: "EUR" })}</div>
+          <div style={{ fontSize: 26, fontWeight: 800 }}>{total.toLocaleString("fr-DZ") + " DA"}</div>
         </div>
         <div style={{ fontSize: 34, opacity: 0.25 }}>💵</div>
       </div>
@@ -481,7 +484,7 @@ function Paiements({ user }) {
                   <span style={{ fontWeight: 800, color: "#0f4c81", fontSize: 14 }}>{item.fournisseur}</span>
                   {item.reference && <span style={{ fontSize: 11, color: "#8fa3b8", background: "#f0f4f8", padding: "2px 7px", borderRadius: 6 }}>{item.reference}</span>}
                 </div>
-                <div style={{ fontWeight: 800, fontSize: 17, color: "#1a2e3b" }}>{parseFloat(item.montant).toLocaleString("fr-FR", { style: "currency", currency: "EUR" })}</div>
+                <div style={{ fontWeight: 800, fontSize: 17, color: "#1a2e3b" }}>{parseFloat(item.montant).toLocaleString("fr-DZ") + " DA"}</div>
                 <div style={{ fontSize: 11, color: "#b0c4d8", marginTop: 3 }}>💵 {item.remis_par} · {formatDate(item.date)}</div>
                 {item.note && <div style={{ color: "#5a7a90", fontSize: 12, marginTop: 3 }}>{item.note}</div>}
               </div>
@@ -655,6 +658,160 @@ function Ruptures({ user }) {
   );
 }
 
+
+// ═══════════════════════════════════════════
+// ÉTATS MENSUELS
+// ═══════════════════════════════════════════
+const MOIS = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
+
+function EtatsMensuels({ user }) {
+  const fournisseurs = useFirebase("fournisseurs", []);
+  const items        = useFirebase("etats_mensuels", []);
+  const now          = new Date();
+  const [mois, setMois]   = useState(now.getMonth());
+  const [annee, setAnnee] = useState(now.getFullYear());
+  const [form, setForm]   = useState({ fournisseur: "", montant_facture: "", montant_regle: "", note: "", statut: "En attente" });
+  const [showForm, setShowForm] = useState(false);
+
+  if (!fournisseurs || !items) return <Loader />;
+
+  const fournisseurNoms = fournisseurs.map(f => f.nom);
+
+  // Filtrer par mois/année sélectionnés
+  const filtered = items.filter(i => i.mois === mois && i.annee === annee);
+
+  // Totaux
+  const totalFacture = filtered.reduce((s, i) => s + parseFloat(i.montant_facture || 0), 0);
+  const totalRegle   = filtered.reduce((s, i) => s + parseFloat(i.montant_regle   || 0), 0);
+  const totalReste   = totalFacture - totalRegle;
+
+  const add = () => {
+    if (!form.fournisseur || !form.montant_facture) return;
+    fbAdd("etats_mensuels", {
+      ...form,
+      mois, annee,
+      montant_facture: parseFloat(form.montant_facture),
+      montant_regle:   parseFloat(form.montant_regle || 0),
+      saisi_par: user.nom,
+    });
+    setForm({ fournisseur: form.fournisseur, montant_facture: "", montant_regle: "", note: "", statut: "En attente" });
+    setShowForm(false);
+  };
+
+  const cycleStatut = (item) => {
+    const cycle = ["En attente", "Vérifié", "Validé"];
+    fbUpdate("etats_mensuels", item.id, { statut: cycle[(cycle.indexOf(item.statut) + 1) % cycle.length] });
+  };
+
+  const ANNEES = [now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1];
+
+  return (
+    <div>
+      {/* Sélecteur mois / année */}
+      <div style={{ background: "#fff", border: "1.5px solid #e2ecf5", borderRadius: 14, padding: "14px 16px", marginBottom: 16 }}>
+        <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+          <select value={mois} onChange={e => setMois(parseInt(e.target.value))} style={{ ...inputStyle, flex: 1, minWidth: 120 }}>
+            {MOIS.map((m, i) => <option key={i} value={i}>{m}</option>)}
+          </select>
+          <select value={annee} onChange={e => setAnnee(parseInt(e.target.value))} style={{ ...inputStyle, width: 100 }}>
+            {ANNEES.map(a => <option key={a} value={a}>{a}</option>)}
+          </select>
+        </div>
+      </div>
+
+      {/* Résumé du mois */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 16 }}>
+        <div style={{ background: "#fff", border: "1.5px solid #e2ecf5", borderRadius: 12, padding: "12px 14px" }}>
+          <div style={{ fontSize: 11, color: "#8fa3b8", fontWeight: 700, marginBottom: 4 }}>FACTURÉ</div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: "#0a3560" }}>{totalFacture.toLocaleString("fr-DZ")} DA</div>
+        </div>
+        <div style={{ background: "#fff", border: "1.5px solid #e2ecf5", borderRadius: 12, padding: "12px 14px" }}>
+          <div style={{ fontSize: 11, color: "#8fa3b8", fontWeight: 700, marginBottom: 4 }}>RÉGLÉ</div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: "#10b981" }}>{totalRegle.toLocaleString("fr-DZ")} DA</div>
+        </div>
+        <div style={{ background: totalReste > 0 ? "#fef2f2" : "#f0fdf4", border: `1.5px solid ${totalReste > 0 ? "#fecaca" : "#bbf7d0"}`, borderRadius: 12, padding: "12px 14px" }}>
+          <div style={{ fontSize: 11, color: "#8fa3b8", fontWeight: 700, marginBottom: 4 }}>RESTE</div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: totalReste > 0 ? "#ef4444" : "#10b981" }}>{totalReste.toLocaleString("fr-DZ")} DA</div>
+        </div>
+      </div>
+
+      <button onClick={() => setShowForm(!showForm)} style={{ ...btnPrimary, width: "100%", marginBottom: 16 }}>+ Ajouter un fournisseur</button>
+
+      {showForm && (
+        <div style={{ background: "#f0f6ff", border: "1.5px solid #c2d9f0", borderRadius: 14, padding: 16, marginBottom: 16 }}>
+          <div style={{ marginBottom: 10 }}>
+            <label style={labelStyle}>Fournisseur *</label>
+            {fournisseurNoms.length > 0
+              ? <select value={form.fournisseur} onChange={e => setForm({ ...form, fournisseur: e.target.value })} style={inputStyle}>
+                  <option value="">-- Choisir --</option>
+                  {fournisseurNoms.map(f => <option key={f}>{f}</option>)}
+                </select>
+              : <input value={form.fournisseur} onChange={e => setForm({ ...form, fournisseur: e.target.value })} placeholder="Nom du fournisseur…" style={inputStyle} />
+            }
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+            <div>
+              <label style={labelStyle}>Montant facturé (DA) *</label>
+              <input type="number" value={form.montant_facture} onChange={e => setForm({ ...form, montant_facture: e.target.value })} placeholder="0" style={inputStyle} />
+            </div>
+            <div>
+              <label style={labelStyle}>Montant réglé (DA)</label>
+              <input type="number" value={form.montant_regle} onChange={e => setForm({ ...form, montant_regle: e.target.value })} placeholder="0" style={inputStyle} />
+            </div>
+          </div>
+          <div style={{ marginBottom: 14 }}>
+            <label style={labelStyle}>Note</label>
+            <input value={form.note} onChange={e => setForm({ ...form, note: e.target.value })} placeholder="Remarque, numéro de relevé…" style={inputStyle} />
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={add} style={btnPrimary}>Enregistrer</button>
+            <button onClick={() => setShowForm(false)} style={btnSecondary}>Annuler</button>
+          </div>
+        </div>
+      )}
+
+      {/* Liste */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {filtered.length === 0 && <Empty text={`Aucun état pour ${MOIS[mois]} ${annee}`} />}
+        {filtered.map(item => {
+          const reste = parseFloat(item.montant_facture || 0) - parseFloat(item.montant_regle || 0);
+          return (
+            <div key={item.id} style={{ background: "#fff", border: `1.5px solid ${reste <= 0 ? "#bbf7d0" : "#e2ecf5"}`, borderLeft: `4px solid ${reste <= 0 ? "#10b981" : reste > 0 ? "#f59e0b" : "#e2ecf5"}`, borderRadius: 14, padding: 16 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                <div style={{ flex: 1, marginRight: 10 }}>
+                  <div style={{ fontWeight: 800, color: "#0a3560", fontSize: 15, marginBottom: 6 }}>{item.fournisseur}</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 4 }}>
+                    <div>
+                      <div style={{ fontSize: 10, color: "#8fa3b8", fontWeight: 700 }}>FACTURÉ</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "#1a2e3b" }}>{parseFloat(item.montant_facture).toLocaleString("fr-DZ")} DA</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 10, color: "#8fa3b8", fontWeight: 700 }}>RÉGLÉ</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "#10b981" }}>{parseFloat(item.montant_regle || 0).toLocaleString("fr-DZ")} DA</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 10, color: "#8fa3b8", fontWeight: 700 }}>RESTE</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: reste > 0 ? "#ef4444" : "#10b981" }}>{reste.toLocaleString("fr-DZ")} DA</div>
+                    </div>
+                  </div>
+                  {item.note && <div style={{ color: "#5a7a90", fontSize: 12, marginTop: 4 }}>{item.note}</div>}
+                  <div style={{ fontSize: 11, color: "#b0c4d8", marginTop: 4 }}>Saisi par {item.saisi_par}</div>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-end" }}>
+                  <StatutBadge statut={item.statut} onClick={() => cycleStatut(item)} />
+                  {user.role === "admin" && (
+                    <button onClick={() => fbRemove("etats_mensuels", item.id)} style={{ padding: "3px 8px", borderRadius: 6, border: "1.5px solid #fecaca", cursor: "pointer", background: "transparent", fontSize: 11, color: "#ef4444" }}>Supprimer</button>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ═══════════════════════════════════════════
 // APP PRINCIPALE
 // ═══════════════════════════════════════════
@@ -725,6 +882,7 @@ export default function App() {
             {active === "Paiements"    && <Paiements    user={user} />}
             {active === "Consignes"    && <Consignes    user={user} />}
             {active === "Ruptures"     && <Ruptures     user={user} />}
+            {active === "États Mensuels" && <EtatsMensuels user={user} />}
             {active === "Paramètres"   && <Parametres   pharmacieName={pharmacieName} />}
           </div>
         </div>
