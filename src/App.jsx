@@ -28,8 +28,8 @@ const COMPTES = [
 
 // Collaborateurs peuvent voir : Commandes, Consignes, Ruptures
 // Admin voit tout : + Réclamations, Paiements, Paramètres
-const MODULES_COLLAB       = ["Réclamations", "Commandes", "Consignes", "Ruptures", "États Mensuels"];
-const MODULES_COLLAB_SANAA = ["Réclamations", "Commandes", "Paiements", "Consignes", "Ruptures", "États Mensuels"];
+const MODULES_COLLAB       = ["Réclamations", "Commandes", "Consignes", "Ruptures", "Chèques", "États Mensuels"];
+const MODULES_COLLAB_SANAA = ["Réclamations", "Commandes", "Paiements", "Consignes", "Ruptures", "Chèques", "États Mensuels"];
 const MODULES_ADMIN  = ["Réclamations", "Commandes", "Paiements", "Consignes", "Ruptures", "États Mensuels", "Paramètres"];
 
 // ─── ICONS ───
@@ -39,6 +39,7 @@ const Icons = {
   Paiements:    <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>,
   Consignes:    <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>,
   Ruptures:     <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 00-2 2v6a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/><line x1="12" y1="12" x2="12" y2="12.01" strokeWidth="3"/></svg>,
+  "Chèques": <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="14" rx="2"/><path d="M2 10h20M6 14h4M6 17h2"/><circle cx="17" cy="14.5" r="2.5" fill="none"/></svg>,
   "États Mensuels": <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/></svg>,
   Paramètres:   <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>,
 };
@@ -49,6 +50,7 @@ const MODULE_DESC = {
   Paiements:    "Enregistrez les paiements espèces aux fournisseurs.",
   Consignes:    "Laissez des messages et consignes à vos collègues.",
   Ruptures:     "Signalez les produits manquants ou en rupture de stock.",
+  "Chèques": "Suivez la remise des chèques aux fournisseurs.",
   "États Mensuels": "Vérifiez et suivez les achats mensuels par fournisseur.",
   Paramètres:   "Gérez les collaborateurs, fournisseurs et nom de la pharmacie.",
 };
@@ -58,7 +60,7 @@ const STATUT_COLORS = {
   "Livré": "#10b981", "Commandé": "#6366f1", "Annulé": "#ef4444",
   "Payé": "#10b981", "À vérifier": "#f59e0b",
   "Rupture": "#ef4444", "Commandé fournisseur": "#6366f1", "Reçu": "#10b981",
-  "Vérifié": "#6366f1", "Validé": "#10b981",
+  "Vérifié": "#6366f1", "Validé": "#10b981", "Disponible": "#6366f1", "Remis": "#10b981", "En attente chèque": "#f59e0b",
 };
 
 const labelStyle   = { display: "block", fontSize: 11, fontWeight: 700, color: "#5a7a90", marginBottom: 5, textTransform: "uppercase", letterSpacing: 0.5 };
@@ -659,6 +661,193 @@ function Ruptures({ user }) {
 }
 
 
+
+// ═══════════════════════════════════════════
+// CHÈQUES
+// ═══════════════════════════════════════════
+function Cheques({ user }) {
+  const items        = useFirebase("cheques", []);
+  const fournisseurs = useFirebase("fournisseurs", []);
+  const collabs      = useFirebase("collaborateurs", []);
+  const [form, setForm]         = useState({ fournisseur: "", montant: "", numero: "", note: "", compte: "" });
+  const [showForm, setShowForm] = useState(false);
+  const [filter, setFilter]     = useState("Tous");
+
+  if (!items || !fournisseurs || !collabs) return <Loader />;
+
+  const fournisseurNoms = fournisseurs.map(f => f.nom);
+  const collabNoms      = collabs.map(c => c.nom);
+
+  const filtered = filter === "Tous" ? items
+    : filter === "En attente" ? items.filter(i => i.statut === "En attente chèque")
+    : items.filter(i => i.statut === filter);
+
+  const enAttente   = items.filter(i => i.statut === "En attente chèque").length;
+  const disponibles = items.filter(i => i.statut === "Disponible").length;
+
+  const add = () => {
+    if (!form.fournisseur || !form.montant) return;
+    fbAdd("cheques", {
+      ...form,
+      montant: parseFloat(form.montant),
+      statut: "En attente chèque",
+      cree_par: user.nom,
+      remis_par: "",
+      date_remise: null,
+    });
+    setForm({ fournisseur: form.fournisseur, montant: "", numero: "", note: "", compte: "" });
+    setShowForm(false);
+  };
+
+  const marquerDisponible = (item) => {
+    fbUpdate("cheques", item.id, { statut: "Disponible", date_disponible: Date.now() });
+  };
+
+  const marquerRemis = (item) => {
+    fbUpdate("cheques", item.id, {
+      statut: "Remis",
+      remis_par: user.nom,
+      date_remise: Date.now(),
+    });
+  };
+
+  return (
+    <div>
+      {/* Badges résumé */}
+      {(enAttente > 0 || disponibles > 0) && (
+        <div style={{ display: "flex", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
+          {enAttente > 0 && (
+            <div style={{ background: "#fef3c7", border: "1.5px solid #f59e0b", borderRadius: 10, padding: "8px 14px", fontSize: 13, color: "#92400e", fontWeight: 600 }}>
+              ✏️ {enAttente} chèque{enAttente > 1 ? "s" : ""} à émettre
+            </div>
+          )}
+          {disponibles > 0 && (
+            <div style={{ background: "#eff6ff", border: "1.5px solid #6366f1", borderRadius: 10, padding: "8px 14px", fontSize: 13, color: "#4338ca", fontWeight: 600 }}>
+              📋 {disponibles} chèque{disponibles > 1 ? "s" : ""} disponible{disponibles > 1 ? "s" : ""} à remettre
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Filtres */}
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
+        {["Tous", "En attente", "Disponible", "Remis"].map(f => (
+          <button key={f} onClick={() => setFilter(f)} style={{ padding: "5px 12px", borderRadius: 20, border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 12, fontWeight: 600, background: filter === f ? "#0f4c81" : "#e8f0f8", color: filter === f ? "#fff" : "#0f4c81" }}>{f}</button>
+        ))}
+      </div>
+
+      <button onClick={() => setShowForm(!showForm)} style={{ ...btnPrimary, width: "100%", marginBottom: 16 }}>+ Nouveau chèque</button>
+
+      {showForm && (
+        <div style={{ background: "#f0f6ff", border: "1.5px solid #c2d9f0", borderRadius: 14, padding: 16, marginBottom: 16 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+            <div>
+              <label style={labelStyle}>Fournisseur *</label>
+              {fournisseurNoms.length > 0
+                ? <select value={form.fournisseur} onChange={e => setForm({ ...form, fournisseur: e.target.value })} style={inputStyle}>
+                    <option value="">-- Choisir --</option>
+                    {fournisseurNoms.map(f => <option key={f}>{f}</option>)}
+                  </select>
+                : <input value={form.fournisseur} onChange={e => setForm({ ...form, fournisseur: e.target.value })} placeholder="Nom du fournisseur…" style={inputStyle} />
+              }
+            </div>
+            <div>
+              <label style={labelStyle}>Montant (DA) *</label>
+              <input type="number" value={form.montant} onChange={e => setForm({ ...form, montant: e.target.value })} placeholder="0" style={inputStyle} />
+            </div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+            <div>
+              <label style={labelStyle}>N° Chèque</label>
+              <input value={form.numero} onChange={e => setForm({ ...form, numero: e.target.value })} placeholder="Ex : 000123" style={inputStyle} />
+            </div>
+            <div>
+              <label style={labelStyle}>Compte bancaire</label>
+              <input value={form.compte} onChange={e => setForm({ ...form, compte: e.target.value })} placeholder="Ex : CPA, BNA…" style={inputStyle} />
+            </div>
+          </div>
+          <div style={{ marginBottom: 14 }}>
+            <label style={labelStyle}>Note</label>
+            <input value={form.note} onChange={e => setForm({ ...form, note: e.target.value })} placeholder="Remarque…" style={inputStyle} />
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={add} style={btnPrimary}>Enregistrer</button>
+            <button onClick={() => setShowForm(false)} style={btnSecondary}>Annuler</button>
+          </div>
+        </div>
+      )}
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {filtered.length === 0 && <Empty text="Aucun chèque" />}
+        {filtered.sort((a,b) => b.date - a.date).map(item => (
+          <div key={item.id} style={{
+            background: item.statut === "Remis" ? "#f0fdf4" : item.statut === "Disponible" ? "#eff6ff" : "#fff",
+            border: `1.5px solid ${item.statut === "Remis" ? "#bbf7d0" : item.statut === "Disponible" ? "#c7d2fe" : "#e2ecf5"}`,
+            borderLeft: `4px solid ${item.statut === "Remis" ? "#10b981" : item.statut === "Disponible" ? "#6366f1" : "#f59e0b"}`,
+            borderRadius: 14, padding: 16
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+              <div style={{ flex: 1, marginRight: 10 }}>
+                {/* Fournisseur + montant */}
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginBottom: 5 }}>
+                  <span style={{ fontWeight: 800, color: "#0a3560", fontSize: 15 }}>{item.fournisseur}</span>
+                  <span style={{ fontWeight: 800, fontSize: 14, color: "#0f4c81" }}>{parseFloat(item.montant).toLocaleString("fr-DZ")} DA</span>
+                </div>
+                {/* Infos */}
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap", fontSize: 12, color: "#8fa3b8", marginBottom: 4 }}>
+                  {item.numero && <span>N° {item.numero}</span>}
+                  {item.compte && <span>🏦 {item.compte}</span>}
+                  <span>✏️ Créé par {item.cree_par} · {formatDate(item.date)}</span>
+                </div>
+                {/* Date disponible */}
+                {item.date_disponible && (
+                  <div style={{ fontSize: 12, color: "#6366f1", fontWeight: 600 }}>
+                    📋 Disponible depuis {formatDate(item.date_disponible)}
+                  </div>
+                )}
+                {/* Date remise */}
+                {item.statut === "Remis" && item.date_remise && (
+                  <div style={{ fontSize: 12, color: "#10b981", fontWeight: 600 }}>
+                    ✅ Remis par {item.remis_par} le {formatDate(item.date_remise)}
+                  </div>
+                )}
+                {item.note && <div style={{ color: "#5a7a90", fontSize: 12, marginTop: 3 }}>{item.note}</div>}
+              </div>
+
+              {/* Actions */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-end", flexShrink: 0 }}>
+                <span style={{ whiteSpace: "nowrap", padding: "5px 13px", borderRadius: 20, fontWeight: 700, fontSize: 12, background: (STATUT_COLORS[item.statut] || "#8fa3b8") + "22", color: STATUT_COLORS[item.statut] || "#8fa3b8" }}>
+                  {item.statut}
+                </span>
+
+                {/* Admin peut marquer disponible */}
+                {item.statut === "En attente chèque" && user.role === "admin" && (
+                  <button onClick={() => marquerDisponible(item)} style={{ padding: "5px 10px", borderRadius: 8, border: "1.5px solid #c7d2fe", cursor: "pointer", background: "#eff6ff", fontSize: 12, color: "#6366f1", fontWeight: 700 }}>
+                    ✓ Disponible
+                  </button>
+                )}
+
+                {/* Tout le monde peut marquer remis */}
+                {item.statut === "Disponible" && (
+                  <button onClick={() => marquerRemis(item)} style={{ padding: "5px 10px", borderRadius: 8, border: "1.5px solid #bbf7d0", cursor: "pointer", background: "#f0fdf4", fontSize: 12, color: "#10b981", fontWeight: 700 }}>
+                    ✅ Remis au fourn.
+                  </button>
+                )}
+
+                {user.role === "admin" && (
+                  <button onClick={() => fbRemove("cheques", item.id)} style={{ padding: "3px 8px", borderRadius: 6, border: "1.5px solid #fecaca", cursor: "pointer", background: "transparent", fontSize: 11, color: "#ef4444" }}>
+                    Supprimer
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ═══════════════════════════════════════════
 // ÉTATS MENSUELS
 // ═══════════════════════════════════════════
@@ -882,6 +1071,7 @@ export default function App() {
             {active === "Paiements"    && <Paiements    user={user} />}
             {active === "Consignes"    && <Consignes    user={user} />}
             {active === "Ruptures"     && <Ruptures     user={user} />}
+            {active === "Chèques" && <Cheques user={user} />}
             {active === "États Mensuels" && <EtatsMensuels user={user} />}
             {active === "Paramètres"   && <Parametres   pharmacieName={pharmacieName} />}
           </div>
