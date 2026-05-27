@@ -30,7 +30,7 @@ const COMPTES = [
 // Admin voit tout : + Réclamations, Paiements, Paramètres
 const MODULES_COLLAB       = ["Réclamations", "Commandes", "Consignes", "Ruptures", "Chèques", "États Mensuels"];
 const MODULES_COLLAB_SANAA = ["Réclamations", "Commandes", "Paiements", "Consignes", "Ruptures", "Chèques", "États Mensuels"];
-const MODULES_ADMIN  = ["Réclamations", "Commandes", "Paiements", "Consignes", "Ruptures", "États Mensuels", "Paramètres"];
+const MODULES_ADMIN  = ["Réclamations", "Commandes", "Paiements", "Consignes", "Ruptures", "Chèques", "États Mensuels", "Paramètres"];
 
 // ─── ICONS ───
 const Icons = {
